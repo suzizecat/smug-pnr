@@ -11,4 +11,4 @@ class GridNode:
 	def add_neighbors(self, other : "GridNode"):
 		if other not in self.neighbors :
 			self.neighbors.append(other)
-		other.add_neighbors(self)
+			other.add_neighbors(self)

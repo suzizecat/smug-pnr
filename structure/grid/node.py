@@ -7,6 +7,7 @@ class GridNode:
 		self.position_y: int = y
 
 		self.parent_grid = None
+		self.routed = False
 
 	def add_neighbors(self, other : "GridNode"):
 		if other not in self.neighbors :

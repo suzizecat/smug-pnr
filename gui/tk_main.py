@@ -32,6 +32,7 @@ class MainWindow(Tk):
 		p2 = G.Point(650,300)
 		s = G.Segment(p1,p2)
 		self.wires.extend(s.manhattan)
+		self.wires.extend(G.Segment(G.Point(100,50), G.Point(500,500)).manhattan)
 
 		#self.minsize(100,100)
 	def on_redraw(self):

@@ -52,6 +52,9 @@ class Point:
 	def __str__(self):
 		return f"({self.x:4d};{self.y:4d})"
 
+	def __eq__(self, other : "Point"):
+		return (self.x,self.y) == (other.x,other.y)
+
 
 
 class Segment:
@@ -68,7 +71,31 @@ class Segment:
 		ret &= self.start.is_valid and self.end.is_valid
 		return ret
 
-	def intersect_with(self,other : "Segment"):
+	def share_end_with(self,other: "Segment") -> int:
+		ret = 0
+		if self.start == other.start:
+			ret += 1
+		if self.start == other.end:
+			ret += 1
+		if self.end == other.start:
+			ret += 1
+		if self.end == other.end:
+			ret += 1
+
+		return ret
+
+	@property
+	def sqlength(self):
+		return self.x **2 + self.y ** 2
+
+	def __eq__(self, other : "Segment"):
+		return (self.start,self.end) == (other.start,other.end) or (self.start,self.end) == (other.end,other.start)
+
+	def intersect_with(self,other : "Segment", strict=False):
+
+		if not strict and self.share_end_with(other) == 1 :
+			return False
+
 		o1 = Point.orientation(self.start, self.end,other.start)
 		o2 = Point.orientation(self.start, self.end, other.end)
 		o3 = Point.orientation(other.start, other.end, self.start)
@@ -134,6 +161,6 @@ class Segment:
 if __file__ == "__main__" :
 	p1 = Point(0,0)
 	p2 = Point(10,5)
-	s = Segment(p1,p2)
-	t = s.manhattan
+	seg = Segment(p1,p2)
+	t = seg.manhattan
 

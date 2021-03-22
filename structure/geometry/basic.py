@@ -2,8 +2,8 @@ import typing as T
 
 class Point:
 	def __init__(self, x = None, y = None):
-		self.x = x
-		self.y = y
+		self.x = int(x)
+		self.y = int(y)
 
 	@property
 	def is_valid(self):
@@ -64,6 +64,13 @@ class Segment:
 
 	def __str__(self):
 		return f"<{str(self.start)} -> {str(self.end)}>"
+
+	@property
+	def coef(self):
+		if self.start.x == self.end.x :
+			return None
+		else :
+			return  (self.end.y - self.start.y) / (self.end.x - self.start.x)
 
 	@property
 	def is_valid(self):
@@ -139,11 +146,9 @@ class Segment:
 		if self.start.x == self.end.x or self.start.y == self.end.y:
 			return tuple([self])
 
-		facteur = (self.end.y - self.start.y) / (self.end.x - self.start.x)
-
 		ret = []
 		# Major horizontal component, we'll go H then V then H
-		if abs(facteur) < 1 :
+		if abs(self.coef) < 1 :
 			first_end = Point(round(self.x / 2),0) + self.start
 			second_end = Point(first_end.x,self.end.y)
 		else:

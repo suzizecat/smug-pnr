@@ -17,6 +17,7 @@ class MainWindow(Tk):
 		menubar.add_command(label="Ripup",command=self.on_ripup)
 		menubar.add_command(label="Manhattan", command=self.on_manhattan)
 		menubar.add_command(label="Reset",command=self.on_reset)
+		menubar.add_command(label="Cleanup", command=self.on_cleanup)
 		self.canvas = Canvas(root)
 		self.canvas.configure(scrollregion=(0, 0, 800, 600))
 
@@ -68,3 +69,7 @@ class MainWindow(Tk):
 	def on_stats(self):
 		self.router.compute_crossings()
 		print(f"Found {self.router.overlaps} overlaps")
+
+	def on_cleanup(self):
+		self.router.cleanup()
+		self.on_redraw()

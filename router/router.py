@@ -1,4 +1,4 @@
-from structure.geometry import Segment
+from structure.geometry import Segment, Point
 import typing as T
 
 class Net(Segment):
@@ -66,6 +66,16 @@ class Router :
 			new_wires.extend(w.manhattan)
 		self.netlist = new_wires
 
+	def have_crossing_with(self,other : Net):
+		if other in self.netlist :
+			raise RuntimeError
+
+		ret = 0
+		for net in self.valid_nets:
+			if other.intersect_with(net):
+				ret += 1
+		return ret
+
 	def ripup_pass(self):
 		self.cleanup()
 		self.compute_crossings()
@@ -76,12 +86,23 @@ class Router :
 
 			net = crossing_nets[0]
 			crossing_match = net.crossings[0]
-			poss1 = (Net(net.start,crossing_match.start),Net(crossing_match.start,net.end))
-			len_poss1 = poss1[0].sqlength + poss1[1].sqlength
-			poss2 = (Net(net.start, crossing_match.end), Net(crossing_match.end, net.end))
-			len_poss2 = poss2[0].sqlength + poss2[1].sqlength
+			crs_strt_pt = crossing_match.start - Point(crossing_match.x,crossing_match.y) * 0.05
+			poss1 = (Net(net.start, crs_strt_pt) ,Net(crs_strt_pt,net.end))
 
-			selected_path = poss1 if len_poss1 < len_poss2 else poss2
+			crs_end_pt = crossing_match.end  + Point(crossing_match.x,crossing_match.y) * 0.05
+			poss2 = (Net(net.start, crs_end_pt), Net(crs_end_pt, net.end))
+
+			poss1_crosses = self.have_crossing_with(poss1[0]) + self.have_crossing_with(poss1[1])
+			poss2_crosses = self.have_crossing_with(poss2[0]) + self.have_crossing_with(poss2[1])
+
+			if poss1_crosses == poss2_crosses :
+				len_poss1 = poss1[0].sqlength + poss1[1].sqlength
+				len_poss2 = poss2[0].sqlength + poss2[1].sqlength
+				selected_path = poss1 if len_poss1 < len_poss2 else poss2
+			else :
+				print("Rip-up on less crossings")
+				selected_path = poss1 if poss1_crosses < poss2_crosses else poss2
+
 			new_nets.extend(selected_path)
 			net.invalid = True
 			net.clear_crossing()
@@ -91,15 +112,49 @@ class Router :
 
 		self.netlist.extend(new_nets)
 
+	def cleanup_colinear(self):
+		temp_netlist = self.netlist
+		temp_prev_netlist = None
+		print("Cleanup colinear...")
+		while temp_netlist is not None :
+			temp_prev_netlist = temp_netlist
+			temp_netlist = self._cleanup_one_colinear(temp_netlist)
+
+		self.netlist = temp_prev_netlist
+
+	def _cleanup_one_colinear(self,temp_netlist):
+		to_skip = list()
+		edited_netlist = temp_netlist
+		run_again = False
+		for net in edited_netlist :
+			for other in [x for x in edited_netlist if x not in to_skip] :
+				if other is net :
+					continue
+				if net.coef != other.coef :
+					continue
+				# On est parallèles
+				if net.end == other.start :
+					lookup_node = net.end
+					sharings = [x for x in edited_netlist if (x not in to_skip and x is not net and x is not other and (x.start == lookup_node or x.end == lookup_node))]
+					if len(sharings) == 0 :
+						edited_netlist.remove(net)
+						edited_netlist.remove(other)
+						edited_netlist.append(Net(net.start,other.end))
+						run_again = True
+			to_skip.append(net)
+
+		return temp_netlist if run_again else None
 
 	def cleanup(self) :
+		self.reset_crossings()
 		self.netlist = self.valid_nets
-		duplicate_to_remove : T.List[Net] = list()
-		for n in self.netlist :
-			for others in [x for x in self.netlist if x is not n and x not in duplicate_to_remove] :
-				if n == others :
-					duplicate_to_remove.append(n)
-					break
+		self.cleanup_colinear()
+
+
+
+
+
+
 
 
 
